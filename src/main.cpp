@@ -27,6 +27,8 @@ SDL_Surface *gbackground = NULL;
 SDL_Surface *gsnakebodystraight = NULL;
 SDL_Surface *gsnakebodytrun = NULL;
 SDL_Surface *gsnakehead = NULL;
+SDL_Surface *gsnaketail = NULL;
+SDL_Surface *gfruit = NULL;
 
 
 SDL_Surface *loadSurface(std::string path);
@@ -87,6 +89,18 @@ bool loadMedia()
 	if (gsnakehead == NULL)
 	{
 		printf("Unable to load image %s! SDL Error: %s\n", "./snakehead.bmp", SDL_GetError());
+		success = false;
+	}
+	gsnaketail = loadSurface("./assets/snaketail.bmp");
+	if (gsnaketail == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snaketail.bmp", SDL_GetError());
+		success = false;
+	}
+	gfruit = loadSurface("./assets/fruit.bmp");
+	if (gfruit == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./fruit.bmp", SDL_GetError());
 		success = false;
 	}
 	return success;
