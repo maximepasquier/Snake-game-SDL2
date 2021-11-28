@@ -5,14 +5,14 @@
 #include <chrono>
 #include <random>
 
-enum Rotation
+enum Direction
 {
 	up,
 	down,
 	left,
 	right
 };
-
+/*
 enum Snake_parts
 {
 	head,
@@ -21,12 +21,12 @@ enum Snake_parts
 	tail,
 	empty
 };
+*/
 
-typedef struct snake
+typedef struct snake_part
 {
-	Snake_parts p;
-	Rotation r;
-} snake;
+	int id;
+} snake_part;
 
 //*Screen dimension constants
 const int ASSETS_SIZE = 40;
@@ -52,16 +52,31 @@ SDL_Surface *gScreenSurface = NULL;
 
 //*The image we will load and show on the screen
 SDL_Surface *gbackground = NULL;
-SDL_Surface *gsnakebodystraight = NULL;
-SDL_Surface *gsnakebodytrun = NULL;
-SDL_Surface *gsnakehead = NULL;
-SDL_Surface *gsnaketail = NULL;
+
+SDL_Surface *gsnakebodystraightUD = NULL;
+SDL_Surface *gsnakebodystraightLR = NULL;
+
+SDL_Surface *gsnakebodyturnUR = NULL;
+SDL_Surface *gsnakebodyturnUL = NULL;
+SDL_Surface *gsnakebodyturnDR = NULL;
+SDL_Surface *gsnakebodyturnDL = NULL;
+
+SDL_Surface *gsnakeheadU = NULL;
+SDL_Surface *gsnakeheadD = NULL;
+SDL_Surface *gsnakeheadL = NULL;
+SDL_Surface *gsnakeheadR = NULL;
+
+SDL_Surface *gsnaketailU = NULL;
+SDL_Surface *gsnaketailD = NULL;
+SDL_Surface *gsnaketailL = NULL;
+SDL_Surface *gsnaketailR = NULL;
+
 SDL_Surface *gfruit = NULL;
 
 SDL_Surface *loadSurface(std::string path);
 
 //* Grid
-snake **grid;
+snake_part **grid;
 
 //* Generator
 unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -101,36 +116,102 @@ bool loadMedia()
 	//Loading success flag
 	bool success = true;
 
+	//+ Background
 	gbackground = loadSurface("./assets/background.bmp");
 	if (gbackground == NULL)
 	{
 		printf("Unable to load image %s! SDL Error: %s\n", "./background.bmp", SDL_GetError());
 		success = false;
 	}
-	gsnakebodystraight = loadSurface("./assets/snakebodystraight.bmp");
-	if (gsnakebodystraight == NULL)
+	//+ Snake body straight
+	gsnakebodystraightUD = loadSurface("./assets/snakebodystraightUD.bmp");
+	if (gsnakebodystraightUD == NULL)
 	{
-		printf("Unable to load image %s! SDL Error: %s\n", "./snakebodystraight.bmp", SDL_GetError());
+		printf("Unable to load image %s! SDL Error: %s\n", "./snakebodystraightUD.bmp", SDL_GetError());
 		success = false;
 	}
-	gsnakebodytrun = loadSurface("./assets/snakebodyturn.bmp");
-	if (gsnakebodytrun == NULL)
+	gsnakebodystraightLR = loadSurface("./assets/snakebodystraightLR.bmp");
+	if (gsnakebodystraightLR == NULL)
 	{
-		printf("Unable to load image %s! SDL Error: %s\n", "./snakebodytrun.bmp", SDL_GetError());
+		printf("Unable to load image %s! SDL Error: %s\n", "./snakebodystraightLR.bmp", SDL_GetError());
 		success = false;
 	}
-	gsnakehead = loadSurface("./assets/snakehead.bmp");
-	if (gsnakehead == NULL)
+	//+ Snake body trun
+	gsnakebodyturnUL = loadSurface("./assets/snakebodyturnUL.bmp");
+	if (gsnakebodyturnUL == NULL)
 	{
-		printf("Unable to load image %s! SDL Error: %s\n", "./snakehead.bmp", SDL_GetError());
+		printf("Unable to load image %s! SDL Error: %s\n", "./snakebodyturnUL.bmp", SDL_GetError());
 		success = false;
 	}
-	gsnaketail = loadSurface("./assets/snaketail.bmp");
-	if (gsnaketail == NULL)
+	gsnakebodyturnUR = loadSurface("./assets/snakebodyturnUR.bmp");
+	if (gsnakebodyturnUR == NULL)
 	{
-		printf("Unable to load image %s! SDL Error: %s\n", "./snaketail.bmp", SDL_GetError());
+		printf("Unable to load image %s! SDL Error: %s\n", "./snakebodyturnUR.bmp", SDL_GetError());
 		success = false;
 	}
+	gsnakebodyturnDL = loadSurface("./assets/snakebodyturnDL.bmp");
+	if (gsnakebodyturnDL == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snakebodyturnDL.bmp", SDL_GetError());
+		success = false;
+	}
+	gsnakebodyturnDR = loadSurface("./assets/snakebodyturnDR.bmp");
+	if (gsnakebodyturnDR == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snakebodyturnDR.bmp", SDL_GetError());
+		success = false;
+	}
+	//+ Snake head
+	gsnakeheadU = loadSurface("./assets/snakeheadU.bmp");
+	if (gsnakeheadU == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snakeheadU.bmp", SDL_GetError());
+		success = false;
+	}
+	gsnakeheadD = loadSurface("./assets/snakeheadD.bmp");
+	if (gsnakeheadD == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snakeheadD.bmp", SDL_GetError());
+		success = false;
+	}
+	gsnakeheadL = loadSurface("./assets/snakeheadL.bmp");
+	if (gsnakeheadL == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snakeheadL.bmp", SDL_GetError());
+		success = false;
+	}
+	gsnakeheadR = loadSurface("./assets/snakeheadR.bmp");
+	if (gsnakeheadR == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snakeheadR.bmp", SDL_GetError());
+		success = false;
+	}
+	//+ Snake tail
+	gsnaketailU = loadSurface("./assets/snaketailU.bmp");
+	if (gsnaketailU == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snaketailU.bmp", SDL_GetError());
+		success = false;
+	}
+	gsnaketailD = loadSurface("./assets/snaketailD.bmp");
+	if (gsnaketailD == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snaketailD.bmp", SDL_GetError());
+		success = false;
+	}
+	gsnaketailL = loadSurface("./assets/snaketailL.bmp");
+	if (gsnaketailL == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snaketailL.bmp", SDL_GetError());
+		success = false;
+	}
+	gsnaketailR = loadSurface("./assets/snaketailR.bmp");
+	if (gsnaketailR == NULL)
+	{
+		printf("Unable to load image %s! SDL Error: %s\n", "./snaketailR.bmp", SDL_GetError());
+		success = false;
+	}
+	//+ Fruit
 	gfruit = loadSurface("./assets/fruit.bmp");
 	if (gfruit == NULL)
 	{
@@ -167,10 +248,10 @@ void close()
 int main(int argc, char *args[])
 {
 	//* Init grid game
-	grid = new snake *[GRID_LINES];
+	grid = new snake_part *[GRID_LINES];
 	for (int i = 0; i < GRID_LINES; i++)
 	{
-		grid[i] = new snake[GRID_COLUMNS];
+		grid[i] = new snake_part[GRID_COLUMNS];
 	}
 
 	//* Set grid game to empty
@@ -178,20 +259,26 @@ int main(int argc, char *args[])
 	{
 		for (int j = 0; j < GRID_COLUMNS; j++)
 		{
-			grid[i][j].p = empty;
+			grid[i][j].id = 0;
 		}
 	}
 
 	//* Init game
-	//+ Start game with the snake at a fixes position
+	//+ Snake initial length
+	int snake_length = 6;
+	//+ Snake head coords
 	int snake_head_x = GRID_LINES / 2;
 	int snake_head_y = GRID_COLUMNS / 2;
 	//+ Define the head of the snake, rotation to the top
-	grid[snake_head_x][snake_head_y].p = head;
-	grid[snake_head_x][snake_head_y].r = up;
+	grid[snake_head_x][snake_head_y].id = 1;
 	//+ Define the tail of the snake, rotation to the bottom
-	grid[snake_head_x][snake_head_y + 1].p = tail;
-	grid[snake_head_x][snake_head_y + 1].r = down;
+	grid[snake_head_x + 1][snake_head_y].id = 2;
+	grid[snake_head_x + 2][snake_head_y].id = 3;
+	grid[snake_head_x + 3][snake_head_y].id = 4;
+	grid[snake_head_x + 3][snake_head_y+1].id = 5;
+	grid[snake_head_x + 3][snake_head_y+2].id = 6;
+	//+ Orientation of the snake
+	Direction orientation = up;
 
 	//*Start up SDL and create window
 	if (!init())
@@ -223,30 +310,22 @@ int main(int argc, char *args[])
 						{
 						case SDLK_UP:
 							std::cout << "UP" << std::endl;
-							grid[snake_head_x][snake_head_y].p = body_straight;
-							snake_head_y--;
-							grid[snake_head_x][snake_head_y].p = head;
+							orientation = up;
 							break;
 
 						case SDLK_DOWN:
 							std::cout << "DOWN" << std::endl;
-							grid[snake_head_x][snake_head_y].p = body_straight;
-							snake_head_y++;
-							grid[snake_head_x][snake_head_y].p = head;
+							orientation = down;
 							break;
 
 						case SDLK_LEFT:
 							std::cout << "LEFT" << std::endl;
-							grid[snake_head_x][snake_head_y].p = body_straight;
-							snake_head_x--;
-							grid[snake_head_x][snake_head_y].p = head;
+							orientation = left;
 							break;
 
 						case SDLK_RIGHT:
 							std::cout << "RIGHT" << std::endl;
-							grid[snake_head_x][snake_head_y].p = body_straight;
-							snake_head_x++;
-							grid[snake_head_x][snake_head_y].p = head;
+							orientation = right;
 							break;
 
 						default:
@@ -256,39 +335,165 @@ int main(int argc, char *args[])
 				}
 				//*Draw the background
 				SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
-				/*
-				SDL_BlitSurface(gsnakehead, NULL, gScreenSurface, NULL);
-				SDL_Rect gomec;
-				gomec.x = 0;
-				gomec.y = 40;
-				SDL_BlitSurface(gsnakebodystraight, NULL, gScreenSurface, &gomec);
-				*/
+				//* Update snake position
+				//+ Move all the body
+				for (int line = 0; line < GRID_LINES; line++)
+				{
+					for (int column = 0; column < GRID_COLUMNS; column++)
+					{
+						if (grid[line][column].id > 0)
+						{
+							grid[line][column].id++;
+							//+ See if it exceeds the length of the snake
+							if (grid[line][column].id > snake_length)
+							{
+								grid[line][column].id = 0;
+							}
+						}
+					}
+				}
+				//+ Check orientation
+				switch (orientation)
+				{
+				case up:
+					snake_head_y--;
+					break;
+				case down:
+					snake_head_y++;
+					break;
+				case left:
+					snake_head_x--;
+					break;
+				case right:
+					snake_head_x++;
+					break;
+
+				default:
+					break;
+				}
+				//+ Move head
+				if (grid[snake_head_x][snake_head_y].id != 0)
+				{
+					std::cout << "LOST" << std::endl;
+				}
+				grid[snake_head_x][snake_head_y].id = 1;
+
 				//* Draw snake
 				for (int line = 0; line < GRID_LINES; line++)
 				{
 					for (int column = 0; column < GRID_COLUMNS; column++)
 					{
-						if (grid[line][column].p != empty)
+						if (grid[line][column].id != 0)
 						{
 							SDL_Rect image_position;
 							image_position.x = line * ASSETS_SIZE;
 							image_position.y = column * ASSETS_SIZE;
-							switch (grid[line][column].p)
+							if (grid[line][column].id == 1)
 							{
-							case head:
-								SDL_BlitSurface(gsnakehead, NULL, gScreenSurface, &image_position);
-								break;
-							case body_straight:
-								SDL_BlitSurface(gsnakebodystraight, NULL, gScreenSurface, &image_position);
-								break;
-							case body_turn:
-								SDL_BlitSurface(gsnakebodytrun, NULL, gScreenSurface, &image_position);
-								break;
-							case tail:
-								SDL_BlitSurface(gsnaketail, NULL, gScreenSurface, &image_position);
-								break;
-							default:
-								break;
+								//+ head part
+								//SDL_BlitSurface(gsnakeheadU, NULL, gScreenSurface, &image_position);
+								switch (orientation)
+								{
+								case up:
+									SDL_BlitSurface(gsnakeheadU, NULL, gScreenSurface, &image_position);
+									break;
+								case down:
+									SDL_BlitSurface(gsnakeheadD, NULL, gScreenSurface, &image_position);
+									break;
+								case left:
+									SDL_BlitSurface(gsnakeheadL, NULL, gScreenSurface, &image_position);
+									break;
+								case right:
+									SDL_BlitSurface(gsnakeheadR, NULL, gScreenSurface, &image_position);
+									break;
+
+								default:
+									break;
+								}
+							}
+							else if (grid[line][column].id == snake_length)
+							{
+								//+ tail part
+								if (grid[line][column - 1].id == snake_length - 1)
+								{
+									SDL_BlitSurface(gsnaketailD, NULL, gScreenSurface, &image_position);
+								}
+								else if (grid[line][column + 1].id == snake_length - 1)
+								{
+									SDL_BlitSurface(gsnaketailU, NULL, gScreenSurface, &image_position);
+								}
+								else if (grid[line - 1][column].id == snake_length - 1)
+								{
+									SDL_BlitSurface(gsnaketailR, NULL, gScreenSurface, &image_position);
+								}
+								else if (grid[line + 1][column].id == snake_length - 1)
+								{
+									SDL_BlitSurface(gsnaketailL, NULL, gScreenSurface, &image_position);
+								}
+							}
+							else
+							{
+								//+ body part
+								if (grid[line][column].id - 1 == grid[line][column - 1].id)
+								{
+									if (grid[line][column].id + 1 == grid[line][column + 1].id)
+									{
+										SDL_BlitSurface(gsnakebodystraightUD, NULL, gScreenSurface, &image_position);
+									}
+									else if (grid[line][column].id + 1 == grid[line - 1][column].id)
+									{
+										SDL_BlitSurface(gsnakebodyturnUL, NULL, gScreenSurface, &image_position);
+									}
+									else if (grid[line][column].id + 1 == grid[line + 1][column].id)
+									{
+										SDL_BlitSurface(gsnakebodyturnUR, NULL, gScreenSurface, &image_position);
+									}
+								}
+								else if (grid[line][column].id - 1 == grid[line][column + 1].id)
+								{
+									if (grid[line][column].id + 1 == grid[line][column - 1].id)
+									{
+										SDL_BlitSurface(gsnakebodystraightUD, NULL, gScreenSurface, &image_position);
+									}
+									else if (grid[line][column].id + 1 == grid[line - 1][column].id)
+									{
+										SDL_BlitSurface(gsnakebodyturnDL, NULL, gScreenSurface, &image_position);
+									}
+									else if (grid[line][column].id + 1 == grid[line + 1][column].id)
+									{
+										SDL_BlitSurface(gsnakebodyturnDR, NULL, gScreenSurface, &image_position);
+									}
+								}
+								else if (grid[line][column].id - 1 == grid[line - 1][column].id)
+								{
+									if (grid[line][column].id + 1 == grid[line + 1][column].id)
+									{
+										SDL_BlitSurface(gsnakebodystraightLR, NULL, gScreenSurface, &image_position);
+									}
+									else if (grid[line][column].id + 1 == grid[line][column + 1].id)
+									{
+										SDL_BlitSurface(gsnakebodyturnDL, NULL, gScreenSurface, &image_position);
+									}
+									else if (grid[line][column].id + 1 == grid[line][column - 1].id)
+									{
+										SDL_BlitSurface(gsnakebodyturnUL, NULL, gScreenSurface, &image_position);
+									}
+								}
+								else if (grid[line][column].id - 1 == grid[line + 1][column].id)
+								{
+									if (grid[line][column].id + 1 == grid[line - 1][column].id)
+									{
+										SDL_BlitSurface(gsnakebodystraightLR, NULL, gScreenSurface, &image_position);
+									}
+									else if (grid[line][column].id + 1 == grid[line][column + 1].id)
+									{
+										SDL_BlitSurface(gsnakebodyturnDR, NULL, gScreenSurface, &image_position);
+									}
+									else if (grid[line][column].id + 1 == grid[line][column - 1].id)
+									{
+										SDL_BlitSurface(gsnakebodyturnUR, NULL, gScreenSurface, &image_position);
+									}
+								}
 							}
 						}
 					}
