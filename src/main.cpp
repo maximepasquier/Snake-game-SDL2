@@ -248,24 +248,42 @@ void close()
 int main(int argc, char *args[])
 {
 	//* Init grid game
-	grid = new snake_part *[GRID_LINES];
-	for (int i = 0; i < GRID_LINES; i++)
+	grid = new snake_part *[GRID_LINES + 2];
+	for (int i = 0; i < GRID_LINES + 2; i++)
 	{
-		grid[i] = new snake_part[GRID_COLUMNS];
+		grid[i] = new snake_part[GRID_COLUMNS + 2];
+	}
+
+	//* Set grid game to wall
+	for (int i = 0; i < GRID_LINES + 2; i++)
+	{
+		for (int j = 0; j < GRID_COLUMNS + 2; j++)
+		{
+			grid[i][j].id = -2;
+		}
 	}
 
 	//* Set grid game to empty
-	for (int i = 0; i < GRID_LINES; i++)
+	for (int i = 1; i < GRID_LINES + 1; i++)
 	{
-		for (int j = 0; j < GRID_COLUMNS; j++)
+		for (int j = 1; j < GRID_COLUMNS + 1; j++)
 		{
 			grid[i][j].id = 0;
 		}
 	}
 
+	for (int i = 0; i < GRID_LINES + 2; i++)
+	{
+		for (int j = 0; j < GRID_COLUMNS + 2; j++)
+		{
+			std::cout << grid[i][j].id << " ";
+		}
+		std::cout << std::endl;
+	}
+
 	//* Init game
 	//+ Snake initial length
-	int snake_length = 6;
+	int snake_length = 2;
 	//+ Snake head coords
 	int snake_head_x = GRID_LINES / 2;
 	int snake_head_y = GRID_COLUMNS / 2;
@@ -273,12 +291,13 @@ int main(int argc, char *args[])
 	grid[snake_head_x][snake_head_y].id = 1;
 	//+ Define the tail of the snake, rotation to the bottom
 	grid[snake_head_x + 1][snake_head_y].id = 2;
-	grid[snake_head_x + 2][snake_head_y].id = 3;
-	grid[snake_head_x + 3][snake_head_y].id = 4;
-	grid[snake_head_x + 3][snake_head_y+1].id = 5;
-	grid[snake_head_x + 3][snake_head_y+2].id = 6;
 	//+ Orientation of the snake
 	Direction orientation = up;
+	//+ Fruit presence
+	std::uniform_real_distribution<> fruit_generation(0.0, 1.0);
+	std::uniform_int_distribution<> x_coord_generation(0, GRID_LINES);
+	std::uniform_int_distribution<> y_coord_generation(0, GRID_COLUMNS);
+	bool fruit = false;
 
 	//*Start up SDL and create window
 	if (!init())
@@ -295,9 +314,11 @@ int main(int argc, char *args[])
 		else
 		{
 			bool quit = false;
+			bool input = false;
 			SDL_Event e;
 			while (!quit)
 			{
+				input = false;
 				while (SDL_PollEvent(&e) != 0)
 				{
 					if (e.type == SDL_QUIT)
@@ -306,40 +327,73 @@ int main(int argc, char *args[])
 					}
 					else if (e.type == SDL_KEYDOWN)
 					{
-						switch (e.key.keysym.sym)
+						if (!input)
 						{
-						case SDLK_UP:
-							std::cout << "UP" << std::endl;
-							orientation = up;
-							break;
+							input = true;
+							switch (e.key.keysym.sym)
+							{
+							case SDLK_UP:
+								std::cout << "UP" << std::endl;
+								if (orientation != down)
+								{
+									orientation = up;
+								}
+								break;
 
-						case SDLK_DOWN:
-							std::cout << "DOWN" << std::endl;
-							orientation = down;
-							break;
+							case SDLK_DOWN:
+								std::cout << "DOWN" << std::endl;
+								if (orientation != up)
+								{
+									orientation = down;
+								}
+								break;
 
-						case SDLK_LEFT:
-							std::cout << "LEFT" << std::endl;
-							orientation = left;
-							break;
+							case SDLK_LEFT:
+								std::cout << "LEFT" << std::endl;
+								if (orientation != right)
+								{
+									orientation = left;
+								}
+								break;
 
-						case SDLK_RIGHT:
-							std::cout << "RIGHT" << std::endl;
-							orientation = right;
-							break;
+							case SDLK_RIGHT:
+								std::cout << "RIGHT" << std::endl;
+								if (orientation != left)
+								{
+									orientation = right;
+								}
+								break;
 
-						default:
-							break;
+							default:
+								break;
+							}
 						}
 					}
 				}
 				//*Draw the background
 				SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
+				//* Generate fruit
+				if (!fruit)
+				{
+					double r = fruit_generation(generator);
+					if (r < 0.5)
+					{
+						//+ Generate a fruit
+						int x = x_coord_generation(generator);
+						int y = y_coord_generation(generator);
+						if (grid[x][y].id == 0)
+						{
+							//+ Place fruit
+							grid[x][y].id = -1;
+							fruit = true;
+						}
+					}
+				}
 				//* Update snake position
 				//+ Move all the body
-				for (int line = 0; line < GRID_LINES; line++)
+				for (int line = 1; line < GRID_LINES + 1; line++)
 				{
-					for (int column = 0; column < GRID_COLUMNS; column++)
+					for (int column = 1; column < GRID_COLUMNS + 1; column++)
 					{
 						if (grid[line][column].id > 0)
 						{
@@ -372,26 +426,42 @@ int main(int argc, char *args[])
 					break;
 				}
 				//+ Move head
-				if (grid[snake_head_x][snake_head_y].id != 0)
+				std::cout << snake_head_x << "," << snake_head_y << std::endl;
+
+				if (grid[snake_head_x][snake_head_y].id > 0 || grid[snake_head_x][snake_head_y].id == -2)
 				{
 					std::cout << "LOST" << std::endl;
+					break;
+				}
+				bool add_fruit = false;
+				if (grid[snake_head_x][snake_head_y].id == -1)
+				{
+					//+ A fruit is present on the head cell
+					add_fruit = true;
+					fruit = false;
 				}
 				grid[snake_head_x][snake_head_y].id = 1;
 
 				//* Draw snake
-				for (int line = 0; line < GRID_LINES; line++)
+				for (int line = 1; line < GRID_LINES + 1; line++)
 				{
-					for (int column = 0; column < GRID_COLUMNS; column++)
+					for (int column = 1; column < GRID_COLUMNS + 1; column++)
 					{
 						if (grid[line][column].id != 0)
 						{
 							SDL_Rect image_position;
-							image_position.x = line * ASSETS_SIZE;
-							image_position.y = column * ASSETS_SIZE;
+							image_position.x = (line-1) * ASSETS_SIZE;
+							image_position.y = (column-1) * ASSETS_SIZE;
+							if (grid[line][column].id == -1)
+							{
+								//+ Fruit on this cell
+								SDL_BlitSurface(gfruit, NULL, gScreenSurface, &image_position);
+								continue;
+							}
+
 							if (grid[line][column].id == 1)
 							{
 								//+ head part
-								//SDL_BlitSurface(gsnakeheadU, NULL, gScreenSurface, &image_position);
 								switch (orientation)
 								{
 								case up:
@@ -406,7 +476,6 @@ int main(int argc, char *args[])
 								case right:
 									SDL_BlitSurface(gsnakeheadR, NULL, gScreenSurface, &image_position);
 									break;
-
 								default:
 									break;
 								}
@@ -498,9 +567,14 @@ int main(int argc, char *args[])
 						}
 					}
 				}
+				if(add_fruit)
+				{
+					snake_length++;
+					add_fruit = false;
+				}
 				//*Update the surface
 				SDL_UpdateWindowSurface(gWindow);
-				SDL_Delay(500);
+				SDL_Delay(300);
 			}
 		}
 	}
