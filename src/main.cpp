@@ -272,15 +272,6 @@ int main(int argc, char *args[])
 		}
 	}
 
-	for (int i = 0; i < GRID_LINES + 2; i++)
-	{
-		for (int j = 0; j < GRID_COLUMNS + 2; j++)
-		{
-			std::cout << grid[i][j].id << " ";
-		}
-		std::cout << std::endl;
-	}
-
 	//* Init game
 	//+ Snake initial length
 	int snake_length = 2;
@@ -293,6 +284,8 @@ int main(int argc, char *args[])
 	grid[snake_head_x + 1][snake_head_y].id = 2;
 	//+ Orientation of the snake
 	Direction orientation = up;
+	//+ orentations queue vector
+	std::vector<Direction> orientations_vector;
 	//+ Fruit presence
 	std::uniform_real_distribution<> fruit_generation(0.0, 1.0);
 	std::uniform_int_distribution<> x_coord_generation(0, GRID_LINES);
@@ -314,11 +307,9 @@ int main(int argc, char *args[])
 		else
 		{
 			bool quit = false;
-			bool input = false;
 			SDL_Event e;
 			while (!quit)
 			{
-				input = false;
 				while (SDL_PollEvent(&e) != 0)
 				{
 					if (e.type == SDL_QUIT)
@@ -327,50 +318,82 @@ int main(int argc, char *args[])
 					}
 					else if (e.type == SDL_KEYDOWN)
 					{
-						if (!input)
+						switch (e.key.keysym.sym)
 						{
-							input = true;
-							switch (e.key.keysym.sym)
+						case SDLK_UP:
+							std::cout << "UP" << std::endl;
+							if (!orientations_vector.empty())
 							{
-							case SDLK_UP:
-								std::cout << "UP" << std::endl;
-								if (orientation != down)
+								if (orientations_vector.back() != down)
 								{
-									orientation = up;
+									orientations_vector.push_back(up);
 								}
-								break;
-
-							case SDLK_DOWN:
-								std::cout << "DOWN" << std::endl;
-								if (orientation != up)
-								{
-									orientation = down;
-								}
-								break;
-
-							case SDLK_LEFT:
-								std::cout << "LEFT" << std::endl;
-								if (orientation != right)
-								{
-									orientation = left;
-								}
-								break;
-
-							case SDLK_RIGHT:
-								std::cout << "RIGHT" << std::endl;
-								if (orientation != left)
-								{
-									orientation = right;
-								}
-								break;
-
-							default:
-								break;
 							}
+							else
+							{
+								orientations_vector.push_back(up);
+							}
+							break;
+
+						case SDLK_DOWN:
+							std::cout << "DOWN" << std::endl;
+							if (!orientations_vector.empty())
+							{
+								if (orientations_vector.back() != up)
+								{
+									orientations_vector.push_back(down);
+								}
+							}
+							else
+							{
+								orientations_vector.push_back(down);
+							}
+							break;
+
+						case SDLK_LEFT:
+							std::cout << "LEFT" << std::endl;
+							if (!orientations_vector.empty())
+							{
+								if (orientations_vector.back() != right)
+								{
+									orientations_vector.push_back(left);
+								}
+							}
+							else
+							{
+								orientations_vector.push_back(left);
+							}
+							break;
+
+						case SDLK_RIGHT:
+							std::cout << "RIGHT" << std::endl;
+							if (!orientations_vector.empty())
+							{
+								if (orientations_vector.back() != left)
+								{
+									orientations_vector.push_back(right);
+								}
+							}
+							else
+							{
+								orientations_vector.push_back(right);
+							}
+							break;
+
+						default:
+							break;
 						}
 					}
 				}
-				//*Draw the background
+
+				//* Set orientation
+				if (!orientations_vector.empty())
+				{
+					orientation = orientations_vector[0];
+					orientations_vector.erase(orientations_vector.begin());
+				}
+
+				//* Draw the background
 				SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
 				//* Generate fruit
 				if (!fruit)
@@ -426,9 +449,9 @@ int main(int argc, char *args[])
 					break;
 				}
 				//+ Move head
-				std::cout << snake_head_x << "," << snake_head_y << std::endl;
+				//std::cout << snake_head_x << "," << snake_head_y << std::endl;
 
-				if (grid[snake_head_x][snake_head_y].id > 0 || grid[snake_head_x][snake_head_y].id == -2)
+				if ((grid[snake_head_x][snake_head_y].id > 0 && grid[snake_head_x][snake_head_y].id != snake_length) || grid[snake_head_x][snake_head_y].id == -2)
 				{
 					std::cout << "LOST" << std::endl;
 					break;
@@ -450,8 +473,8 @@ int main(int argc, char *args[])
 						if (grid[line][column].id != 0)
 						{
 							SDL_Rect image_position;
-							image_position.x = (line-1) * ASSETS_SIZE;
-							image_position.y = (column-1) * ASSETS_SIZE;
+							image_position.x = (line - 1) * ASSETS_SIZE;
+							image_position.y = (column - 1) * ASSETS_SIZE;
 							if (grid[line][column].id == -1)
 							{
 								//+ Fruit on this cell
@@ -567,14 +590,14 @@ int main(int argc, char *args[])
 						}
 					}
 				}
-				if(add_fruit)
+				if (add_fruit)
 				{
 					snake_length++;
 					add_fruit = false;
 				}
 				//*Update the surface
 				SDL_UpdateWindowSurface(gWindow);
-				SDL_Delay(300);
+				SDL_Delay(200);
 			}
 		}
 	}
