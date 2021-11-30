@@ -63,6 +63,7 @@ private:
     bool fruit;
     std::default_random_engine generator;
     bool quit_game;
+    bool quit_menu;
 
 public:
     game();
@@ -76,10 +77,13 @@ public:
     void game_SDL_render();
     void init_random_generation_numbers();
     void game_loop();
-    void poll_event(SDL_Event e);
-    void update();
-    void render();
+    void poll_event_game(SDL_Event e);
+    void poll_event_menu(SDL_Event e);
+    void update_game();
+    void render_game();
+    void render_menu();
     void generate_fruit();
+    void menu_loop();
 };
 
 #endif

@@ -226,6 +226,7 @@ void game::init_game()
     orientation = up;
     fruit = false;
     quit_game = false;
+    quit_menu = false;
 }
 
 void game::game_SDL_render()
@@ -244,6 +245,7 @@ void game::game_SDL_render()
         }
         else
         {
+            menu_loop();
             game_loop();
         }
     }
@@ -256,18 +258,68 @@ void game::init_random_generation_numbers()
     generator.seed(seed);
 }
 
+void game::menu_loop()
+{
+    SDL_Event e;
+    while (!quit_menu)
+    {
+        poll_event_menu(e);
+        render_menu();
+    }
+}
+
 void game::game_loop()
 {
     SDL_Event e;
     while (!quit_game)
     {
-        poll_event(e);
-        update();
-        render();
+        poll_event_game(e);
+        update_game();
+        render_game();
     }
 }
 
-void game::poll_event(SDL_Event e)
+void game::poll_event_menu(SDL_Event e)
+{
+    while (SDL_PollEvent(&e) != 0)
+    {
+        if (e.type == SDL_QUIT)
+        {
+            quit_menu = true;
+        }
+        else if (e.type == SDL_KEYDOWN)
+        {
+            switch (e.key.keysym.sym)
+            {
+            case SDLK_UP:
+                
+                break;
+
+            case SDLK_DOWN:
+                
+                break;
+
+            default:
+                break;
+            }
+        }
+    }
+}
+
+void game::render_menu()
+{
+    //* Draw the background
+    SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
+    SDL_Surface* text;
+    SDL_Color color = {0,0,0};
+    //text = TTF_RenderText_Solid( font, "Hello World!", color );
+    //* Update the surface
+    SDL_UpdateWindowSurface(gWindow);
+    //+ Adding delay between frames
+    SDL_Delay(DELAY);
+}
+
+void game::poll_event_game(SDL_Event e)
 {
     while (SDL_PollEvent(&e) != 0)
     {
@@ -358,7 +410,7 @@ void game::poll_event(SDL_Event e)
     }
 }
 
-void game::update()
+void game::update_game()
 {
     //* Generate fruit
     generate_fruit();
@@ -425,7 +477,7 @@ void game::update()
     grid[snake_head_x][snake_head_y].id = HEAD;
 }
 
-void game::render()
+void game::render_game()
 {
     //* Draw the background
     SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
