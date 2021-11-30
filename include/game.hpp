@@ -55,6 +55,15 @@ private:
     //* Generator
     unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
 
+    int snake_length;
+    int snake_head_x;
+    int snake_head_y;
+    std::vector<direction> orientations_vector;
+    direction orientation;
+    bool fruit;
+    std::default_random_engine generator;
+    bool quit_game;
+
 public:
     game();
     ~game();
@@ -62,6 +71,14 @@ public:
     bool loadMedia();
     void close();
     SDL_Surface *loadSurface(std::string path);
+    void **set_grid();
+    void init_game();
+    void game_SDL_render();
+    void init_random_generation_numbers();
+    void game_loop();
+    void poll_event(SDL_Event e);
+    void update();
+    void render();
 };
 
 #endif

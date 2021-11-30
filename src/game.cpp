@@ -1,364 +1,24 @@
 #include "game.hpp"
 
+#define EMPTY 0
+#define HEAD 1
+#define WALL -2
+#define FRUIT -1
+#define DELAY 200
+
 game::game()
 {
-    std::default_random_engine generator(seed);
+    //* Init generator
+    init_random_generation_numbers();
+
     //* Init grid game
-    grid = new snake_part *[GRID_LINES + 2];
-    for (int i = 0; i < GRID_LINES + 2; i++)
-    {
-        grid[i] = new snake_part[GRID_COLUMNS + 2];
-    }
-
-    //* Set grid game to wall
-    for (int i = 0; i < GRID_LINES + 2; i++)
-    {
-        for (int j = 0; j < GRID_COLUMNS + 2; j++)
-        {
-            grid[i][j].id = -2;
-        }
-    }
-
-    //* Set grid game to empty
-    for (int i = 1; i < GRID_LINES + 1; i++)
-    {
-        for (int j = 1; j < GRID_COLUMNS + 1; j++)
-        {
-            grid[i][j].id = 0;
-        }
-    }
+    set_grid();
 
     //* Init game
-    //+ Snake initial length
-    int snake_length = 2;
-    //+ Snake head coords
-    int snake_head_x = GRID_LINES / 2;
-    int snake_head_y = GRID_COLUMNS / 2;
-    //+ Define the head of the snake, rotation to the top
-    grid[snake_head_x][snake_head_y].id = 1;
-    //+ Define the tail of the snake, rotation to the bottom
-    grid[snake_head_x + 1][snake_head_y].id = 2;
-    //+ Orientation of the snake
-    direction orientation = up;
-    //+ orentations queue vector
-    std::vector<direction> orientations_vector;
-    //+ Fruit presence
-    std::uniform_real_distribution<> fruit_generation(0.0, 1.0);
-    std::uniform_int_distribution<> x_coord_generation(0, GRID_LINES);
-    std::uniform_int_distribution<> y_coord_generation(0, GRID_COLUMNS);
-    bool fruit = false;
+    init_game();
 
-    //*Start up SDL and create window
-    if (!init())
-    {
-        printf("Failed to initialize!\n");
-    }
-    else
-    {
-        //*Load media
-        if (!loadMedia())
-        {
-            printf("Failed to load media!\n");
-        }
-        else
-        {
-            bool quit = false;
-            SDL_Event e;
-            while (!quit)
-            {
-                while (SDL_PollEvent(&e) != 0)
-                {
-                    if (e.type == SDL_QUIT)
-                    {
-                        quit = true;
-                    }
-                    else if (e.type == SDL_KEYDOWN)
-                    {
-                        switch (e.key.keysym.sym)
-                        {
-                        case SDLK_UP:
-                            //std::cout << "UP" << std::endl;
-                            if (!orientations_vector.empty())
-                            {
-                                if (orientations_vector.back() != down)
-                                {
-                                    orientations_vector.push_back(up);
-                                }
-                            }
-                            else
-                            {
-                                orientations_vector.push_back(up);
-                            }
-                            break;
-
-                        case SDLK_DOWN:
-                            //std::cout << "DOWN" << std::endl;
-                            if (!orientations_vector.empty())
-                            {
-                                if (orientations_vector.back() != up)
-                                {
-                                    orientations_vector.push_back(down);
-                                }
-                            }
-                            else
-                            {
-                                orientations_vector.push_back(down);
-                            }
-                            break;
-
-                        case SDLK_LEFT:
-                            //std::cout << "LEFT" << std::endl;
-                            if (!orientations_vector.empty())
-                            {
-                                if (orientations_vector.back() != right)
-                                {
-                                    orientations_vector.push_back(left);
-                                }
-                            }
-                            else
-                            {
-                                orientations_vector.push_back(left);
-                            }
-                            break;
-
-                        case SDLK_RIGHT:
-                            //std::cout << "RIGHT" << std::endl;
-                            if (!orientations_vector.empty())
-                            {
-                                if (orientations_vector.back() != left)
-                                {
-                                    orientations_vector.push_back(right);
-                                }
-                            }
-                            else
-                            {
-                                orientations_vector.push_back(right);
-                            }
-                            break;
-
-                        default:
-                            break;
-                        }
-                    }
-                }
-
-                //* Set orientation
-                if (!orientations_vector.empty())
-                {
-                    orientation = orientations_vector[0];
-                    orientations_vector.erase(orientations_vector.begin());
-                }
-
-                //* Draw the background
-                SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
-                //* Generate fruit
-                if (!fruit)
-                {
-                    double r = fruit_generation(generator);
-                    if (r < 0.5)
-                    {
-                        //+ Generate a fruit
-                        int x = x_coord_generation(generator);
-                        int y = y_coord_generation(generator);
-                        if (grid[x][y].id == 0)
-                        {
-                            //+ Place fruit
-                            grid[x][y].id = -1;
-                            fruit = true;
-                        }
-                    }
-                }
-                //* Update snake position
-                //+ Move all the body
-                for (int line = 1; line < GRID_LINES + 1; line++)
-                {
-                    for (int column = 1; column < GRID_COLUMNS + 1; column++)
-                    {
-                        if (grid[line][column].id > 0)
-                        {
-                            grid[line][column].id++;
-                            //+ See if it exceeds the length of the snake
-                            if (grid[line][column].id > snake_length)
-                            {
-                                grid[line][column].id = 0;
-                            }
-                        }
-                    }
-                }
-                //+ Check orientation
-                switch (orientation)
-                {
-                case up:
-                    snake_head_y--;
-                    break;
-                case down:
-                    snake_head_y++;
-                    break;
-                case left:
-                    snake_head_x--;
-                    break;
-                case right:
-                    snake_head_x++;
-                    break;
-
-                default:
-                    break;
-                }
-                //+ Move head
-                //std::cout << snake_head_x << "," << snake_head_y << std::endl;
-
-                if ((grid[snake_head_x][snake_head_y].id > 0 && grid[snake_head_x][snake_head_y].id != snake_length) || grid[snake_head_x][snake_head_y].id == -2)
-                {
-                    //std::cout << "LOST" << std::endl;
-                    break;
-                }
-                bool add_fruit = false;
-                if (grid[snake_head_x][snake_head_y].id == -1)
-                {
-                    //+ A fruit is present on the head cell
-                    add_fruit = true;
-                    fruit = false;
-                }
-                grid[snake_head_x][snake_head_y].id = 1;
-
-                //* Draw snake
-                for (int line = 1; line < GRID_LINES + 1; line++)
-                {
-                    for (int column = 1; column < GRID_COLUMNS + 1; column++)
-                    {
-                        if (grid[line][column].id != 0)
-                        {
-                            SDL_Rect image_position;
-                            image_position.x = (line - 1) * ASSETS_SIZE;
-                            image_position.y = (column - 1) * ASSETS_SIZE;
-                            if (grid[line][column].id == -1)
-                            {
-                                //+ Fruit on this cell
-                                SDL_BlitSurface(gfruit, NULL, gScreenSurface, &image_position);
-                                continue;
-                            }
-
-                            if (grid[line][column].id == 1)
-                            {
-                                //+ head part
-                                switch (orientation)
-                                {
-                                case up:
-                                    SDL_BlitSurface(gsnakeheadU, NULL, gScreenSurface, &image_position);
-                                    break;
-                                case down:
-                                    SDL_BlitSurface(gsnakeheadD, NULL, gScreenSurface, &image_position);
-                                    break;
-                                case left:
-                                    SDL_BlitSurface(gsnakeheadL, NULL, gScreenSurface, &image_position);
-                                    break;
-                                case right:
-                                    SDL_BlitSurface(gsnakeheadR, NULL, gScreenSurface, &image_position);
-                                    break;
-                                default:
-                                    break;
-                                }
-                            }
-                            else if (grid[line][column].id == snake_length)
-                            {
-                                //+ tail part
-                                if (grid[line][column - 1].id == snake_length - 1)
-                                {
-                                    SDL_BlitSurface(gsnaketailD, NULL, gScreenSurface, &image_position);
-                                }
-                                else if (grid[line][column + 1].id == snake_length - 1)
-                                {
-                                    SDL_BlitSurface(gsnaketailU, NULL, gScreenSurface, &image_position);
-                                }
-                                else if (grid[line - 1][column].id == snake_length - 1)
-                                {
-                                    SDL_BlitSurface(gsnaketailR, NULL, gScreenSurface, &image_position);
-                                }
-                                else if (grid[line + 1][column].id == snake_length - 1)
-                                {
-                                    SDL_BlitSurface(gsnaketailL, NULL, gScreenSurface, &image_position);
-                                }
-                            }
-                            else
-                            {
-                                //+ body part
-                                if (grid[line][column].id - 1 == grid[line][column - 1].id)
-                                {
-                                    if (grid[line][column].id + 1 == grid[line][column + 1].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodystraightUD, NULL, gScreenSurface, &image_position);
-                                    }
-                                    else if (grid[line][column].id + 1 == grid[line - 1][column].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodyturnUL, NULL, gScreenSurface, &image_position);
-                                    }
-                                    else if (grid[line][column].id + 1 == grid[line + 1][column].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodyturnUR, NULL, gScreenSurface, &image_position);
-                                    }
-                                }
-                                else if (grid[line][column].id - 1 == grid[line][column + 1].id)
-                                {
-                                    if (grid[line][column].id + 1 == grid[line][column - 1].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodystraightUD, NULL, gScreenSurface, &image_position);
-                                    }
-                                    else if (grid[line][column].id + 1 == grid[line - 1][column].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodyturnDL, NULL, gScreenSurface, &image_position);
-                                    }
-                                    else if (grid[line][column].id + 1 == grid[line + 1][column].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodyturnDR, NULL, gScreenSurface, &image_position);
-                                    }
-                                }
-                                else if (grid[line][column].id - 1 == grid[line - 1][column].id)
-                                {
-                                    if (grid[line][column].id + 1 == grid[line + 1][column].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodystraightLR, NULL, gScreenSurface, &image_position);
-                                    }
-                                    else if (grid[line][column].id + 1 == grid[line][column + 1].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodyturnDL, NULL, gScreenSurface, &image_position);
-                                    }
-                                    else if (grid[line][column].id + 1 == grid[line][column - 1].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodyturnUL, NULL, gScreenSurface, &image_position);
-                                    }
-                                }
-                                else if (grid[line][column].id - 1 == grid[line + 1][column].id)
-                                {
-                                    if (grid[line][column].id + 1 == grid[line - 1][column].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodystraightLR, NULL, gScreenSurface, &image_position);
-                                    }
-                                    else if (grid[line][column].id + 1 == grid[line][column + 1].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodyturnDR, NULL, gScreenSurface, &image_position);
-                                    }
-                                    else if (grid[line][column].id + 1 == grid[line][column - 1].id)
-                                    {
-                                        SDL_BlitSurface(gsnakebodyturnUR, NULL, gScreenSurface, &image_position);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                if (add_fruit)
-                {
-                    snake_length++;
-                    add_fruit = false;
-                }
-                //*Update the surface
-                SDL_UpdateWindowSurface(gWindow);
-                SDL_Delay(200);
-            }
-        }
-    }
-    //Free resources and close SDL
-    close();
+    //* SDL game rendering
+    game_SDL_render();
 }
 
 game::~game()
@@ -367,7 +27,7 @@ game::~game()
 
 bool game::init()
 {
-    //Initialization flag
+    // Initialization flag
     bool success = true;
 
     //*Initialize SDL
@@ -396,7 +56,7 @@ bool game::init()
 
 bool game::loadMedia()
 {
-    //Loading success flag
+    // Loading success flag
     bool success = true;
 
     //+ Background
@@ -504,7 +164,7 @@ bool game::loadMedia()
     return success;
 }
 
-SDL_Surface* game::loadSurface(std::string path)
+SDL_Surface *game::loadSurface(std::string path)
 {
     SDL_Surface *loadedSurface = SDL_LoadBMP(path.c_str());
     if (loadedSurface == NULL)
@@ -522,4 +182,419 @@ void game::close()
 
     //*Quit SDL subsystems
     SDL_Quit();
+}
+
+void **game::set_grid()
+{
+    grid = new snake_part *[GRID_LINES + 2];
+    for (int i = 0; i < GRID_LINES + 2; i++)
+    {
+        grid[i] = new snake_part[GRID_COLUMNS + 2];
+    }
+
+    //* Set grid game to wall
+    for (int i = 0; i < GRID_LINES + 2; i++)
+    {
+        for (int j = 0; j < GRID_COLUMNS + 2; j++)
+        {
+            grid[i][j].id = WALL;
+        }
+    }
+
+    //* Set grid game to empty
+    for (int i = 1; i < GRID_LINES + 1; i++)
+    {
+        for (int j = 1; j < GRID_COLUMNS + 1; j++)
+        {
+            grid[i][j].id = EMPTY;
+        }
+    }
+}
+
+void game::init_game()
+{
+    //+ Snake initial length
+    snake_length = 2;
+    //+ Snake head coords at start
+    snake_head_x = GRID_LINES / 2;
+    snake_head_y = GRID_COLUMNS / 2;
+    //+ Define the head of the snake, rotation to the top
+    grid[snake_head_x][snake_head_y].id = HEAD;
+    //+ Define the tail of the snake, rotation to the bottom
+    grid[snake_head_x + 1][snake_head_y].id = HEAD + 1;
+    //+ Orientation of the snake
+    orientation = up;
+    fruit = false;
+    quit_game = false;
+}
+
+void game::game_SDL_render()
+{
+    //*Start up SDL and create window
+    if (!init())
+    {
+        printf("Failed to initialize!\n");
+    }
+    else
+    {
+        //*Load media
+        if (!loadMedia())
+        {
+            printf("Failed to load media!\n");
+        }
+        else
+        {
+            game_loop();
+        }
+    }
+    //+ Free resources and close SDL
+    close();
+}
+
+void game::init_random_generation_numbers()
+{
+    generator.seed(seed);
+}
+
+void game::game_loop()
+{
+    SDL_Event e;
+    while (!quit_game)
+    {
+        poll_event(e);
+        update();
+        render();
+    }
+}
+
+void game::poll_event(SDL_Event e)
+{
+    while (SDL_PollEvent(&e) != 0)
+    {
+        if (e.type == SDL_QUIT)
+        {
+            quit_game = true;
+        }
+        else if (e.type == SDL_KEYDOWN)
+        {
+            switch (e.key.keysym.sym)
+            {
+            case SDLK_UP:
+                // std::cout << "UP" << std::endl;
+                if (!orientations_vector.empty())
+                {
+                    if (orientations_vector.back() != down)
+                    {
+                        orientations_vector.push_back(up);
+                    }
+                }
+                else
+                {
+                    if (orientation != down)
+                    {
+                        orientations_vector.push_back(up);
+                    }
+                }
+                break;
+
+            case SDLK_DOWN:
+                // std::cout << "DOWN" << std::endl;
+                if (!orientations_vector.empty())
+                {
+                    if (orientations_vector.back() != up)
+                    {
+                        orientations_vector.push_back(down);
+                    }
+                }
+                else
+                {
+                    if (orientation != up)
+                    {
+                        orientations_vector.push_back(down);
+                    }
+                }
+                break;
+
+            case SDLK_LEFT:
+                // std::cout << "LEFT" << std::endl;
+                if (!orientations_vector.empty())
+                {
+                    if (orientations_vector.back() != right)
+                    {
+                        orientations_vector.push_back(left);
+                    }
+                }
+                else
+                {
+                    if (orientation != right)
+                    {
+                        orientations_vector.push_back(left);
+                    }
+                }
+                break;
+
+            case SDLK_RIGHT:
+                // std::cout << "RIGHT" << std::endl;
+                if (!orientations_vector.empty())
+                {
+                    if (orientations_vector.back() != left)
+                    {
+                        orientations_vector.push_back(right);
+                    }
+                }
+                else
+                {
+                    if (orientation != left)
+                    {
+                        orientations_vector.push_back(right);
+                    }
+                }
+                break;
+
+            default:
+                break;
+            }
+        }
+    }
+}
+
+void game::update()
+{
+    std::uniform_real_distribution<> fruit_generation(0.0, 1.0);
+    std::uniform_int_distribution<> x_coord_generation(0, GRID_LINES);
+    std::uniform_int_distribution<> y_coord_generation(0, GRID_COLUMNS);
+
+    //* Set orientation
+    if (!orientations_vector.empty())
+    {
+        orientation = orientations_vector[0];
+        orientations_vector.erase(orientations_vector.begin());
+    }
+
+    //* Generate fruit
+    if (!fruit)
+    {
+        double r = fruit_generation(generator);
+        if (r < 0.5)
+        {
+            //+ Generate a fruit
+            int x = x_coord_generation(generator);
+            int y = y_coord_generation(generator);
+            if (grid[x][y].id == 0)
+            {
+                //+ Place fruit
+                grid[x][y].id = -1;
+                fruit = true;
+            }
+        }
+    }
+    //+ Check orientation
+    switch (orientation)
+    {
+    case up:
+        snake_head_y--;
+        break;
+    case down:
+        snake_head_y++;
+        break;
+    case left:
+        snake_head_x--;
+        break;
+    case right:
+        snake_head_x++;
+        break;
+
+    default:
+        break;
+    }
+    //+ Move head
+    // std::cout << snake_head_x << "," << snake_head_y << std::endl;
+
+    if ((grid[snake_head_x][snake_head_y].id > 0 && grid[snake_head_x][snake_head_y].id != snake_length) || grid[snake_head_x][snake_head_y].id == -2)
+    {
+        // std::cout << "LOST" << std::endl;
+        quit_game = true;
+        return;
+    }
+    //bool add_fruit = false;
+    if (grid[snake_head_x][snake_head_y].id == FRUIT)
+    {
+        //+ A fruit is present on the head cell
+        //add_fruit = true;
+        snake_length++;
+        fruit = false;
+    }
+    
+
+    //* Update snake position
+    //+ Move all the body
+    for (int line = 1; line < GRID_LINES + 1; line++)
+    {
+        for (int column = 1; column < GRID_COLUMNS + 1; column++)
+        {
+            if (grid[line][column].id > 0)
+            {
+                grid[line][column].id++;
+                //+ See if it exceeds the length of the snake
+                if (grid[line][column].id > snake_length)
+                {
+                    grid[line][column].id = EMPTY;
+                }
+            }
+        }
+    }
+    grid[snake_head_x][snake_head_y].id = HEAD;
+    /*
+    for (size_t i = 0; i < GRID_LINES; i++)
+    {
+        for (size_t j = 0; j < GRID_COLUMNS; j++)
+        {
+            std::cout << grid[i][j].id << " ";
+        }
+        std::cout << std::endl;
+        
+    }
+    */    
+}
+
+void game::render()
+{
+    //* Draw the background
+    SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
+
+    //* Draw snake
+    for (int line = 1; line < GRID_LINES + 1; line++)
+    {
+        for (int column = 1; column < GRID_COLUMNS + 1; column++)
+        {
+            if (grid[line][column].id != 0)
+            {
+                SDL_Rect image_position;
+                image_position.x = (line - 1) * ASSETS_SIZE;
+                image_position.y = (column - 1) * ASSETS_SIZE;
+                if (grid[line][column].id == -1)
+                {
+                    //+ Fruit on this cell
+                    SDL_BlitSurface(gfruit, NULL, gScreenSurface, &image_position);
+                    continue;
+                }
+
+                if (grid[line][column].id == 1)
+                {
+                    //+ head part
+                    switch (orientation)
+                    {
+                    case up:
+                        SDL_BlitSurface(gsnakeheadU, NULL, gScreenSurface, &image_position);
+                        break;
+                    case down:
+                        SDL_BlitSurface(gsnakeheadD, NULL, gScreenSurface, &image_position);
+                        break;
+                    case left:
+                        SDL_BlitSurface(gsnakeheadL, NULL, gScreenSurface, &image_position);
+                        break;
+                    case right:
+                        SDL_BlitSurface(gsnakeheadR, NULL, gScreenSurface, &image_position);
+                        break;
+                    default:
+                        break;
+                    }
+                }
+                else if (grid[line][column].id == snake_length)
+                {
+                    //+ tail part
+                    if (grid[line][column - 1].id == snake_length - 1)
+                    {
+                        SDL_BlitSurface(gsnaketailD, NULL, gScreenSurface, &image_position);
+                    }
+                    else if (grid[line][column + 1].id == snake_length - 1)
+                    {
+                        SDL_BlitSurface(gsnaketailU, NULL, gScreenSurface, &image_position);
+                    }
+                    else if (grid[line - 1][column].id == snake_length - 1)
+                    {
+                        SDL_BlitSurface(gsnaketailR, NULL, gScreenSurface, &image_position);
+                    }
+                    else if (grid[line + 1][column].id == snake_length - 1)
+                    {
+                        SDL_BlitSurface(gsnaketailL, NULL, gScreenSurface, &image_position);
+                    }
+                }
+                else
+                {
+                    //+ body part
+                    if (grid[line][column].id - 1 == grid[line][column - 1].id)
+                    {
+                        if (grid[line][column].id + 1 == grid[line][column + 1].id)
+                        {
+                            SDL_BlitSurface(gsnakebodystraightUD, NULL, gScreenSurface, &image_position);
+                        }
+                        else if (grid[line][column].id + 1 == grid[line - 1][column].id)
+                        {
+                            SDL_BlitSurface(gsnakebodyturnUL, NULL, gScreenSurface, &image_position);
+                        }
+                        else if (grid[line][column].id + 1 == grid[line + 1][column].id)
+                        {
+                            SDL_BlitSurface(gsnakebodyturnUR, NULL, gScreenSurface, &image_position);
+                        }
+                    }
+                    else if (grid[line][column].id - 1 == grid[line][column + 1].id)
+                    {
+                        if (grid[line][column].id + 1 == grid[line][column - 1].id)
+                        {
+                            SDL_BlitSurface(gsnakebodystraightUD, NULL, gScreenSurface, &image_position);
+                        }
+                        else if (grid[line][column].id + 1 == grid[line - 1][column].id)
+                        {
+                            SDL_BlitSurface(gsnakebodyturnDL, NULL, gScreenSurface, &image_position);
+                        }
+                        else if (grid[line][column].id + 1 == grid[line + 1][column].id)
+                        {
+                            SDL_BlitSurface(gsnakebodyturnDR, NULL, gScreenSurface, &image_position);
+                        }
+                    }
+                    else if (grid[line][column].id - 1 == grid[line - 1][column].id)
+                    {
+                        if (grid[line][column].id + 1 == grid[line + 1][column].id)
+                        {
+                            SDL_BlitSurface(gsnakebodystraightLR, NULL, gScreenSurface, &image_position);
+                        }
+                        else if (grid[line][column].id + 1 == grid[line][column + 1].id)
+                        {
+                            SDL_BlitSurface(gsnakebodyturnDL, NULL, gScreenSurface, &image_position);
+                        }
+                        else if (grid[line][column].id + 1 == grid[line][column - 1].id)
+                        {
+                            SDL_BlitSurface(gsnakebodyturnUL, NULL, gScreenSurface, &image_position);
+                        }
+                    }
+                    else if (grid[line][column].id - 1 == grid[line + 1][column].id)
+                    {
+                        if (grid[line][column].id + 1 == grid[line - 1][column].id)
+                        {
+                            SDL_BlitSurface(gsnakebodystraightLR, NULL, gScreenSurface, &image_position);
+                        }
+                        else if (grid[line][column].id + 1 == grid[line][column + 1].id)
+                        {
+                            SDL_BlitSurface(gsnakebodyturnDR, NULL, gScreenSurface, &image_position);
+                        }
+                        else if (grid[line][column].id + 1 == grid[line][column - 1].id)
+                        {
+                            SDL_BlitSurface(gsnakebodyturnUR, NULL, gScreenSurface, &image_position);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    /*
+    if (add_fruit)
+    {
+        snake_length++;
+        add_fruit = false;
+    }
+    */
+    //*Update the surface
+    SDL_UpdateWindowSurface(gWindow);
+    SDL_Delay(DELAY);
 }
