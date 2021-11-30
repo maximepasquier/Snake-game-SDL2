@@ -360,9 +360,8 @@ void game::poll_event(SDL_Event e)
 
 void game::update()
 {
-    std::uniform_real_distribution<> fruit_generation(0.0, 1.0);
-    std::uniform_int_distribution<> x_coord_generation(0, GRID_LINES);
-    std::uniform_int_distribution<> y_coord_generation(0, GRID_COLUMNS);
+    //* Generate fruit
+    generate_fruit();
 
     //* Set orientation
     if (!orientations_vector.empty())
@@ -371,24 +370,7 @@ void game::update()
         orientations_vector.erase(orientations_vector.begin());
     }
 
-    //* Generate fruit
-    if (!fruit)
-    {
-        double r = fruit_generation(generator);
-        if (r < 0.5)
-        {
-            //+ Generate a fruit
-            int x = x_coord_generation(generator);
-            int y = y_coord_generation(generator);
-            if (grid[x][y].id == 0)
-            {
-                //+ Place fruit
-                grid[x][y].id = -1;
-                fruit = true;
-            }
-        }
-    }
-    //+ Check orientation
+    //* Update head coords
     switch (orientation)
     {
     case up:
@@ -407,32 +389,28 @@ void game::update()
     default:
         break;
     }
-    //+ Move head
-    // std::cout << snake_head_x << "," << snake_head_y << std::endl;
 
+    //* Check if game is lost
     if ((grid[snake_head_x][snake_head_y].id > 0 && grid[snake_head_x][snake_head_y].id != snake_length) || grid[snake_head_x][snake_head_y].id == -2)
     {
-        // std::cout << "LOST" << std::endl;
         quit_game = true;
         return;
     }
-    //bool add_fruit = false;
+
+    //* Chack if fruit reached
     if (grid[snake_head_x][snake_head_y].id == FRUIT)
     {
         //+ A fruit is present on the head cell
-        //add_fruit = true;
         snake_length++;
         fruit = false;
     }
-    
 
     //* Update snake position
-    //+ Move all the body
     for (int line = 1; line < GRID_LINES + 1; line++)
     {
         for (int column = 1; column < GRID_COLUMNS + 1; column++)
         {
-            if (grid[line][column].id > 0)
+            if (grid[line][column].id > EMPTY)
             {
                 grid[line][column].id++;
                 //+ See if it exceeds the length of the snake
@@ -443,18 +421,8 @@ void game::update()
             }
         }
     }
+    //+ Place the head at the new coord
     grid[snake_head_x][snake_head_y].id = HEAD;
-    /*
-    for (size_t i = 0; i < GRID_LINES; i++)
-    {
-        for (size_t j = 0; j < GRID_COLUMNS; j++)
-        {
-            std::cout << grid[i][j].id << " ";
-        }
-        std::cout << std::endl;
-        
-    }
-    */    
 }
 
 void game::render()
@@ -467,21 +435,21 @@ void game::render()
     {
         for (int column = 1; column < GRID_COLUMNS + 1; column++)
         {
-            if (grid[line][column].id != 0)
+            if (grid[line][column].id != EMPTY)
             {
                 SDL_Rect image_position;
                 image_position.x = (line - 1) * ASSETS_SIZE;
                 image_position.y = (column - 1) * ASSETS_SIZE;
-                if (grid[line][column].id == -1)
+                if (grid[line][column].id == FRUIT)
                 {
                     //+ Fruit on this cell
                     SDL_BlitSurface(gfruit, NULL, gScreenSurface, &image_position);
                     continue;
                 }
 
-                if (grid[line][column].id == 1)
+                if (grid[line][column].id == HEAD)
                 {
-                    //+ head part
+                    //+ head part on this cell
                     switch (orientation)
                     {
                     case up:
@@ -502,7 +470,7 @@ void game::render()
                 }
                 else if (grid[line][column].id == snake_length)
                 {
-                    //+ tail part
+                    //+ tail part on this cell
                     if (grid[line][column - 1].id == snake_length - 1)
                     {
                         SDL_BlitSurface(gsnaketailD, NULL, gScreenSurface, &image_position);
@@ -522,7 +490,7 @@ void game::render()
                 }
                 else
                 {
-                    //+ body part
+                    //+ body part on this cell
                     if (grid[line][column].id - 1 == grid[line][column - 1].id)
                     {
                         if (grid[line][column].id + 1 == grid[line][column + 1].id)
@@ -587,14 +555,32 @@ void game::render()
             }
         }
     }
-    /*
-    if (add_fruit)
-    {
-        snake_length++;
-        add_fruit = false;
-    }
-    */
-    //*Update the surface
+
+    //* Update the surface
     SDL_UpdateWindowSurface(gWindow);
+    //+ Adding delay between frames
     SDL_Delay(DELAY);
+}
+
+void game::generate_fruit()
+{
+    if (!fruit)
+    {
+        std::uniform_real_distribution<> fruit_generation(0.0, 1.0);
+        std::uniform_int_distribution<> x_coord_generation(0, GRID_LINES);
+        std::uniform_int_distribution<> y_coord_generation(0, GRID_COLUMNS);
+        double r = fruit_generation(generator);
+        if (r < 0.5)
+        {
+            //+ Generate a fruit
+            int x = x_coord_generation(generator);
+            int y = y_coord_generation(generator);
+            if (grid[x][y].id == 0)
+            {
+                //+ Place fruit
+                grid[x][y].id = -1;
+                fruit = true;
+            }
+        }
+    }
 }

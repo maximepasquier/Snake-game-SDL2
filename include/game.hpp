@@ -79,6 +79,7 @@ public:
     void poll_event(SDL_Event e);
     void update();
     void render();
+    void generate_fruit();
 };
 
 #endif
