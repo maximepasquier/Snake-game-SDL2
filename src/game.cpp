@@ -292,11 +292,11 @@ void game::poll_event_menu(SDL_Event e)
             switch (e.key.keysym.sym)
             {
             case SDLK_UP:
-                
+
                 break;
 
             case SDLK_DOWN:
-                
+
                 break;
 
             default:
@@ -310,9 +310,23 @@ void game::render_menu()
 {
     //* Draw the background
     SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
-    SDL_Surface* text;
-    SDL_Color color = {0,0,0};
-    //text = TTF_RenderText_Solid( font, "Hello World!", color );
+
+    if (TTF_Init() < 0)
+    {
+        std::cout << "Error initializing SDL_ttf: " << TTF_GetError() << std::endl;
+    }
+
+    TTF_Font *font;
+
+    font = TTF_OpenFont("./assets/lazy.ttf", 24);
+    if (!font)
+    {
+        std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
+    }
+    SDL_Color color = {255, 255, 255};
+    SDL_Surface *bb = TTF_RenderText_Solid(font, "Welcome to Gigi Labs", color);
+    SDL_BlitSurface(bb, NULL, gScreenSurface, NULL);
+
     //* Update the surface
     SDL_UpdateWindowSurface(gWindow);
     //+ Adding delay between frames
