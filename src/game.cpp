@@ -227,6 +227,7 @@ void game::init_game()
     fruit = false;
     quit_game = false;
     quit_menu = false;
+    menu_position = PLAY; // iterator on PLAY
 }
 
 void game::game_SDL_render()
@@ -292,13 +293,20 @@ void game::poll_event_menu(SDL_Event e)
             switch (e.key.keysym.sym)
             {
             case SDLK_UP:
-
+                if (menu_position > PLAY)
+                {
+                    menu_position--;
+                }
                 break;
 
             case SDLK_DOWN:
-
+                if (menu_position < QUIT)
+                {
+                    menu_position++;
+                }
                 break;
-
+            case SDLK_RETURN:
+                break;
             default:
                 break;
             }
@@ -316,21 +324,70 @@ void game::render_menu()
         std::cout << "Error initializing SDL_ttf: " << TTF_GetError() << std::endl;
     }
 
-    TTF_Font *font;
+    TTF_Font *font_title, *font_button_idle, *font_button_selected;
 
-    font = TTF_OpenFont("./assets/lazy.ttf", 24);
-    if (!font)
+    font_title = TTF_OpenFont("./assets/b.ttf", 128);
+    font_button_idle = TTF_OpenFont("./assets/b.ttf", 50);
+    font_button_selected = TTF_OpenFont("./assets/b.ttf", 60);
+    if (!font_title && !font_button_idle && !font_button_selected)
     {
         std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
     }
-    SDL_Color color = {255, 255, 255};
-    SDL_Surface *bb = TTF_RenderText_Solid(font, "Welcome to Gigi Labs", color);
-    SDL_BlitSurface(bb, NULL, gScreenSurface, NULL);
+
+    int initial_height_of_button = 150;
+
+    SDL_Color color = {255, 0, 70};
+    SDL_Color color_selection = {245, 236, 66};
+    SDL_Surface *title = TTF_RenderText_Solid(font_title, "SNAKE", color);
+    SDL_Surface *game_button, *score_button, *quit_button;
+
+    if (menu_position == PLAY)
+    {
+        game_button = TTF_RenderText_Solid(font_button_selected, "PLAY", color_selection);
+    }
+    else
+    {
+        game_button = TTF_RenderText_Solid(font_button_idle, "PLAY", color);
+    }
+    if (menu_position == SCORES)
+    {
+        score_button = TTF_RenderText_Solid(font_button_selected, "SCORES", color_selection);
+    }
+    else
+    {
+        score_button = TTF_RenderText_Solid(font_button_idle, "SCORES", color);
+    }
+    if (menu_position == QUIT)
+    {
+        quit_button = TTF_RenderText_Solid(font_button_selected, "QUIT", color_selection);
+    }
+    else
+    {
+        quit_button = TTF_RenderText_Solid(font_button_idle, "QUIT", color);
+    }
+
+    SDL_Rect title_position, game_button_position, score_button_position, quit_button_position;
+    //+ Title
+    title_position.x = (SCREEN_WIDTH - title->w) / 2;
+    title_position.y = 50;
+    SDL_BlitSurface(title, NULL, gScreenSurface, &title_position);
+    //+ Game button
+    game_button_position.x = (SCREEN_WIDTH - game_button->w) / 2;
+    game_button_position.y = initial_height_of_button += 50;
+    SDL_BlitSurface(game_button, NULL, gScreenSurface, &game_button_position);
+    //+ Score button
+    score_button_position.x = (SCREEN_WIDTH - score_button->w) / 2;
+    score_button_position.y = initial_height_of_button += 50;
+    SDL_BlitSurface(score_button, NULL, gScreenSurface, &score_button_position);
+    //+ Quit button
+    quit_button_position.x = (SCREEN_WIDTH - quit_button->w) / 2;
+    quit_button_position.y = initial_height_of_button += 50;
+    SDL_BlitSurface(quit_button, NULL, gScreenSurface, &quit_button_position);
 
     //* Update the surface
     SDL_UpdateWindowSurface(gWindow);
     //+ Adding delay between frames
-    SDL_Delay(DELAY);
+    SDL_Delay(DELAY/10);
 }
 
 void game::poll_event_game(SDL_Event e)
@@ -346,7 +403,6 @@ void game::poll_event_game(SDL_Event e)
             switch (e.key.keysym.sym)
             {
             case SDLK_UP:
-                // std::cout << "UP" << std::endl;
                 if (!orientations_vector.empty())
                 {
                     if (orientations_vector.back() != down)

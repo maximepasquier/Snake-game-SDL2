@@ -65,6 +65,7 @@ private:
     std::default_random_engine generator;
     bool quit_game;
     bool quit_menu;
+    int menu_position;
 
 public:
     game();

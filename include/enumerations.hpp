@@ -7,4 +7,11 @@ enum direction
 	left,
 	right
 };
+
+enum menu_selection
+{
+	PLAY,
+	SCORES,
+	QUIT
+};
 #endif
