@@ -171,7 +171,8 @@ bool game::loadMedia()
     font_title = TTF_OpenFont("./assets/text.ttf", 128);
     font_button_idle = TTF_OpenFont("./assets/text.ttf", 50);
     font_button_selected = TTF_OpenFont("./assets/text.ttf", 60);
-    font_numbers = TTF_OpenFont("./assets/numbers.ttf",50);
+    font_numbers = TTF_OpenFont("./assets/numbers.ttf", 50);
+    font_sentence = TTF_OpenFont("./assets/numbers.ttf", 30);
     if (!font_title && !font_button_idle && !font_button_selected)
     {
         std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
@@ -244,6 +245,7 @@ void game::init_game()
     quit_game = false;
     quit_menu = false;
     quit_scores = false;
+    quit_save_score = false;
     menu_position = PLAY; // iterator on PLAY
 }
 
@@ -265,6 +267,7 @@ void game::game_SDL_render()
         {
             menu_loop();
             game_loop();
+            save_score_loop();
         }
     }
     //+ Free resources and close SDL
@@ -306,6 +309,305 @@ void game::scores_loop()
         poll_event_scores(e);
         render_scores();
     }
+}
+
+void game::save_score_loop()
+{
+    SDL_Event e;
+    better_score = false;
+    read_json_scores();
+    char_iterator = 0;
+    memset(user_name, 0, 20);
+    // user_name[0] = 'a';
+    while (!quit_save_score)
+    {
+        poll_event_save_score(e);
+        /*
+        for (size_t i = 0; i < 20; i++)
+        {
+            std::cout << user_name[i] << " ";
+        }
+        std::cout << std::endl;
+        */
+        render_save_score();
+    }
+    save_score_to_json();
+}
+
+void game::save_score_to_json()
+{
+    if (char_iterator == 0)
+    {
+        //+ The user didn't enter enything
+        strcpy(user_name, "user");
+    }
+    else
+    {
+        int count = 0;
+        int player_score = snake_length - 2;
+        std::ifstream scores_json("data/scores.json");
+        Json::Reader reader;
+        Json::Value obj;
+        reader.parse(scores_json, obj); // reader can also read strings
+        for (const auto &jv : obj)
+        {
+        }
+
+        std::ofstream file_id;
+        file_id.open("data/scores.json");
+
+        Json::Value value_obj;
+        std::string user_id = "2";
+        value_obj[user_id]["name"] = user_name;
+        value_obj[user_id]["score"] = player_score;
+
+        Json::StyledWriter styledWriter;
+        file_id << styledWriter.write(value_obj);
+
+        file_id.close();
+    }
+}
+
+void game::read_json_scores()
+{
+    int count = 0;
+    int number_max_of_scores = 5;
+    int player_score = snake_length - 2;
+    std::ifstream scores_json("data/scores.json");
+    Json::Reader reader;
+    Json::Value obj;
+    reader.parse(scores_json, obj); // reader can also read strings
+    for (const auto &jv : obj)
+    {
+        // std::cout << jv.size() << std::endl;
+        if (player_score > jv["score"].asInt() && count < number_max_of_scores)
+        {
+            //+ Better score detected
+            better_score = true;
+        }
+        count++;
+    }
+    //+ There was no score
+    if (count == 0)
+    {
+        //+ Better score detected
+        better_score = true;
+    }
+    // std::cout << obj["3"]["name"].asString() << std::endl;
+    // std::cout << obj["3"]["score"].asUInt() << std::endl;
+
+    /*
+    const Json::Value &characters = obj["characters"]; // array of characters
+    for (int i = 0; i < characters.size(); i++)
+    {
+        std::cout << "    name: " << characters[i]["name"].asString();
+        std::cout << " chapter: " << characters[i]["chapter"].asUInt();
+        std::cout << std::endl;
+    }
+    */
+}
+
+void game::poll_event_save_score(SDL_Event e)
+{
+    while (SDL_PollEvent(&e) != 0)
+    {
+        if (e.type == SDL_QUIT)
+        {
+            quit_save_score = true;
+        }
+        else if (e.type == SDL_KEYDOWN && !better_score)
+        {
+            switch (e.key.keysym.sym)
+            {
+            case SDLK_RETURN:
+                break;
+            default:
+                break;
+            }
+        }
+        else if (e.type == SDL_KEYDOWN && better_score)
+        {
+            switch (e.key.keysym.sym)
+            {
+            case SDLK_RETURN:
+                //+ Save the name
+                quit_save_score = true;
+                break;
+            case SDLK_a:
+                user_name[char_iterator] = 'a';
+                char_iterator++;
+                break;
+            case SDLK_b:
+                user_name[char_iterator] = 'b';
+                char_iterator++;
+                break;
+            case SDLK_c:
+                user_name[char_iterator] = 'c';
+                char_iterator++;
+                break;
+            case SDLK_d:
+                user_name[char_iterator] = 'd';
+                char_iterator++;
+                break;
+            case SDLK_e:
+                user_name[char_iterator] = 'e';
+                char_iterator++;
+                break;
+            case SDLK_f:
+                user_name[char_iterator] = 'f';
+                char_iterator++;
+                break;
+            case SDLK_g:
+                user_name[char_iterator] = 'g';
+                char_iterator++;
+                break;
+            case SDLK_h:
+                user_name[char_iterator] = 'h';
+                char_iterator++;
+                break;
+            case SDLK_i:
+                user_name[char_iterator] = 'i';
+                char_iterator++;
+                break;
+            case SDLK_j:
+                user_name[char_iterator] = 'j';
+                char_iterator++;
+                break;
+            case SDLK_k:
+                user_name[char_iterator] = 'k';
+                char_iterator++;
+                break;
+            case SDLK_l:
+                user_name[char_iterator] = 'l';
+                char_iterator++;
+                break;
+            case SDLK_m:
+                user_name[char_iterator] = 'm';
+                char_iterator++;
+                break;
+            case SDLK_n:
+                user_name[char_iterator] = 'n';
+                char_iterator++;
+                break;
+            case SDLK_o:
+                user_name[char_iterator] = 'o';
+                char_iterator++;
+                break;
+            case SDLK_p:
+                user_name[char_iterator] = 'p';
+                char_iterator++;
+                break;
+            case SDLK_q:
+                user_name[char_iterator] = 'q';
+                char_iterator++;
+                break;
+            case SDLK_r:
+                user_name[char_iterator] = 'r';
+                char_iterator++;
+                break;
+            case SDLK_s:
+                user_name[char_iterator] = 's';
+                char_iterator++;
+                break;
+            case SDLK_t:
+                user_name[char_iterator] = 't';
+                char_iterator++;
+                break;
+            case SDLK_u:
+                user_name[char_iterator] = 'u';
+                char_iterator++;
+                break;
+            case SDLK_v:
+                user_name[char_iterator] = 'v';
+                char_iterator++;
+                break;
+            case SDLK_w:
+                user_name[char_iterator] = 'w';
+                char_iterator++;
+                break;
+            case SDLK_x:
+                user_name[char_iterator] = 'x';
+                char_iterator++;
+                break;
+            case SDLK_y:
+                user_name[char_iterator] = 'y';
+                char_iterator++;
+                break;
+            case SDLK_z:
+                user_name[char_iterator] = 'z';
+                char_iterator++;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
+void game::render_save_score()
+{
+    //* Draw the background
+    SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
+
+    SDL_Color color = {255, 0, 170};
+    SDL_Surface *result;
+
+    std::string score_s = std::to_string(snake_length - 2);
+
+    const char *score_c = score_s.c_str();
+
+    char result_c[] = "Your score is : ";
+    strcat(result_c, score_c);
+
+    result = TTF_RenderText_Solid(font_numbers, result_c, color);
+
+    SDL_Rect result_position;
+    //+ Back button
+    result_position.x = (SCREEN_WIDTH - result->w) / 2;
+    result_position.y = 100;
+    SDL_BlitSurface(result, NULL, gScreenSurface, &result_position);
+
+    if (better_score)
+    {
+        char sentence[] = "Enter your name : ";
+        result = TTF_RenderText_Solid(font_sentence, sentence, color);
+
+        SDL_Rect result_position;
+        //+ Back button
+        result_position.x = (SCREEN_WIDTH - result->w) / 2;
+        result_position.y = 200;
+        SDL_BlitSurface(result, NULL, gScreenSurface, &result_position);
+
+        result = TTF_RenderText_Solid(font_sentence, user_name, color);
+        SDL_Rect name_position;
+        if (char_iterator == 0)
+        {
+            result_position.x = SCREEN_WIDTH / 2;
+        }
+        else
+        {
+            result_position.x = (SCREEN_WIDTH - result->w) / 2;
+        }
+        result_position.y = 250;
+        SDL_BlitSurface(result, NULL, gScreenSurface, &result_position);
+    }
+    else
+    {
+        char sentence[] = "Your score won't reach the leaderboard";
+
+        result = TTF_RenderText_Solid(font_sentence, sentence, color);
+
+        SDL_Rect result_position;
+        //+ Back button
+        result_position.x = (SCREEN_WIDTH - result->w) / 2;
+        result_position.y = 200;
+        SDL_BlitSurface(result, NULL, gScreenSurface, &result_position);
+    }
+
+    //* Update the surface
+    SDL_UpdateWindowSurface(gWindow);
+    //+ Adding delay between frames
+    SDL_Delay(DELAY / 10);
 }
 
 void game::poll_event_scores(SDL_Event e)
@@ -759,9 +1061,9 @@ void game::render_game()
     SDL_Color color = {255, 0, 70};
     SDL_Surface *score_button;
 
-    std::string score_s = std::to_string(snake_length-2);
+    std::string score_s = std::to_string(snake_length - 2);
 
-    const char* score_c = score_s.c_str();
+    const char *score_c = score_s.c_str();
 
     score_button = TTF_RenderText_Solid(font_numbers, score_c, color);
 

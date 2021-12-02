@@ -8,6 +8,9 @@
 #include <iostream>
 #include <chrono>
 #include <random>
+#include <fstream>
+#include <jsoncpp/json/json.h>
+#include <jsoncpp/json/value.h>
 
 #include "enumerations.hpp"
 #include "structures.hpp"
@@ -66,8 +69,12 @@ private:
     bool quit_game;
     bool quit_menu;
     bool quit_scores;
+    bool quit_save_score;
     int menu_position;
-    TTF_Font *font_title, *font_button_idle, *font_button_selected, *font_numbers;
+    TTF_Font *font_title, *font_button_idle, *font_button_selected, *font_numbers,*font_sentence;
+    bool better_score;
+    char user_name[20];
+    int char_iterator;
 
 public:
     game();
@@ -91,6 +98,11 @@ public:
     void scores_loop();
     void render_scores();
     void poll_event_scores(SDL_Event e);
+    void save_score_loop();
+    void poll_event_save_score(SDL_Event e);
+    void render_save_score();
+    void read_json_scores();
+    void save_score_to_json();
 };
 
 #endif
