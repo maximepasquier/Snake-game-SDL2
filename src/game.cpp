@@ -363,7 +363,7 @@ void game::save_score_to_json()
         }
         all_scores.append(jv);
         number_of_scores++;
-        if(number_of_scores == 5)
+        if (number_of_scores == 5)
         {
             break;
         }
@@ -632,10 +632,40 @@ void game::poll_event_scores(SDL_Event e)
 
 void game::render_scores()
 {
+    
     //* Draw the background
     SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
 
     SDL_Color color_selection = {245, 236, 66};
+    SDL_Color color = {255, 0, 70};
+
+    int number_max_of_scores = 5;
+    std::ifstream scores_json("data/scores.json");
+    Json::Reader reader;
+    Json::Value obj;
+    reader.parse(scores_json, obj);
+
+    SDL_Surface *one_score;
+    SDL_Rect one_score_position;
+    int initial_height = 50;
+
+    for (const auto &jv : obj)
+    {
+        char c[40];
+        memset(c, 0, 40);
+        strcat(c, jv["name"].asCString());
+        strcat(c, " : ");
+        char integer_string[5];
+        sprintf(integer_string, "%d", jv["score"].asInt());
+        strcat(c, integer_string);
+
+        
+        one_score = TTF_RenderText_Solid(font_numbers, c, color);
+        one_score_position.x = 100;
+        one_score_position.y = initial_height;
+        SDL_BlitSurface(one_score, NULL, gScreenSurface, &one_score_position);
+        initial_height += 50;
+    }
     SDL_Surface *back_button;
 
     back_button = TTF_RenderText_Solid(font_button_selected, "BACK", color_selection);
