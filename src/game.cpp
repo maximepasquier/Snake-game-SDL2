@@ -341,50 +341,58 @@ void game::save_score_to_json()
         //+ The user didn't enter enything
         strcpy(user_name, "user");
     }
-    else
+    int number_of_scores = 0;
+    int player_score = snake_length - 2;
+    std::ifstream scores_json("data/scores.json");
+    Json::Reader reader;
+    Json::Value obj;
+    Json::Value new_score;
+    Json::Value all_scores;
+    new_score["name"] = user_name;
+    new_score["score"] = player_score;
+    reader.parse(scores_json, obj); // reader can also read strings
+    bool placed = false;
+    for (const auto &jv : obj)
     {
-        int count = 0;
-        int player_score = snake_length - 2;
-        std::ifstream scores_json("data/scores.json");
-        Json::Reader reader;
-        Json::Value obj;
-        reader.parse(scores_json, obj); // reader can also read strings
-        for (const auto &jv : obj)
+        if (player_score > jv["score"].asInt() && !placed)
         {
+            //+ Place the new score first
+            all_scores.append(new_score);
+            number_of_scores++;
+            placed = true;
         }
-
-        std::ofstream file_id;
-        file_id.open("data/scores.json");
-
-        Json::Value value_obj;
-        std::string user_id = "2";
-        value_obj[user_id]["name"] = user_name;
-        value_obj[user_id]["score"] = player_score;
-
-        Json::StyledWriter styledWriter;
-        file_id << styledWriter.write(value_obj);
-
-        file_id.close();
+        all_scores.append(jv);
+        number_of_scores++;
+        if(number_of_scores == 5)
+        {
+            break;
+        }
     }
+    //* Write scores
+    std::ofstream json_file;
+    json_file.open("data/scores.json");
+    json_file << all_scores.toStyledString() << std::endl;
 }
 
 void game::read_json_scores()
 {
+
     int count = 0;
     int number_max_of_scores = 5;
     int player_score = snake_length - 2;
     std::ifstream scores_json("data/scores.json");
     Json::Reader reader;
     Json::Value obj;
-    reader.parse(scores_json, obj); // reader can also read strings
+    reader.parse(scores_json, obj);
+
     for (const auto &jv : obj)
     {
-        // std::cout << jv.size() << std::endl;
         if (player_score > jv["score"].asInt() && count < number_max_of_scores)
         {
             //+ Better score detected
             better_score = true;
         }
+
         count++;
     }
     //+ There was no score
@@ -393,18 +401,6 @@ void game::read_json_scores()
         //+ Better score detected
         better_score = true;
     }
-    // std::cout << obj["3"]["name"].asString() << std::endl;
-    // std::cout << obj["3"]["score"].asUInt() << std::endl;
-
-    /*
-    const Json::Value &characters = obj["characters"]; // array of characters
-    for (int i = 0; i < characters.size(); i++)
-    {
-        std::cout << "    name: " << characters[i]["name"].asString();
-        std::cout << " chapter: " << characters[i]["chapter"].asUInt();
-        std::cout << std::endl;
-    }
-    */
 }
 
 void game::poll_event_save_score(SDL_Event e)

@@ -1,6 +1,23 @@
-{
-   "3" : {
-      "name" : "dinde",
+[
+   {
+      "name" : "aleem",
+      "score" : 11
+   },
+   {
+      "name" : "meilleur",
+      "score" : 5
+   },
+   {
+      "name" : "azeem",
       "score" : 4
+   },
+   {
+      "name" : "dernierdeclasse",
+      "score" : 4
+   },
+   {
+      "name" : "pat",
+      "score" : 3
    }
-}
+]
+
