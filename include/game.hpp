@@ -65,7 +65,9 @@ private:
     std::default_random_engine generator;
     bool quit_game;
     bool quit_menu;
+    bool quit_scores;
     int menu_position;
+    TTF_Font *font_title, *font_button_idle, *font_button_selected, *font_numbers;
 
 public:
     game();
@@ -86,6 +88,9 @@ public:
     void render_menu();
     void generate_fruit();
     void menu_loop();
+    void scores_loop();
+    void render_scores();
+    void poll_event_scores(SDL_Event e);
 };
 
 #endif

@@ -51,6 +51,11 @@ bool game::init()
             gScreenSurface = SDL_GetWindowSurface(gWindow);
         }
     }
+    if (TTF_Init() < 0)
+    {
+        std::cout << "Error initializing SDL_ttf: " << TTF_GetError() << std::endl;
+        success = false;
+    }
     return success;
 }
 
@@ -161,6 +166,17 @@ bool game::loadMedia()
         printf("Unable to load image %s! SDL Error: %s\n", "./fruit.bmp", SDL_GetError());
         success = false;
     }
+
+    //* Load ttf
+    font_title = TTF_OpenFont("./assets/text.ttf", 128);
+    font_button_idle = TTF_OpenFont("./assets/text.ttf", 50);
+    font_button_selected = TTF_OpenFont("./assets/text.ttf", 60);
+    font_numbers = TTF_OpenFont("./assets/numbers.ttf",50);
+    if (!font_title && !font_button_idle && !font_button_selected)
+    {
+        std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
+    }
+
     return success;
 }
 
@@ -217,7 +233,7 @@ void game::init_game()
     snake_length = 2;
     //+ Snake head coords at start
     snake_head_x = GRID_LINES / 2;
-    snake_head_y = GRID_COLUMNS / 2;
+    snake_head_y = GRID_COLUMNS - 2;
     //+ Define the head of the snake, rotation to the top
     grid[snake_head_x][snake_head_y].id = HEAD;
     //+ Define the tail of the snake, rotation to the bottom
@@ -227,6 +243,7 @@ void game::init_game()
     fruit = false;
     quit_game = false;
     quit_menu = false;
+    quit_scores = false;
     menu_position = PLAY; // iterator on PLAY
 }
 
@@ -280,13 +297,72 @@ void game::game_loop()
     }
 }
 
+void game::scores_loop()
+{
+    SDL_Event e;
+    quit_scores = false;
+    while (!quit_scores)
+    {
+        poll_event_scores(e);
+        render_scores();
+    }
+}
+
+void game::poll_event_scores(SDL_Event e)
+{
+    while (SDL_PollEvent(&e) != 0)
+    {
+        if (e.type == SDL_QUIT)
+        {
+            quit_scores = true;
+            quit_menu = true;
+            quit_game = true;
+        }
+        else if (e.type == SDL_KEYDOWN)
+        {
+            switch (e.key.keysym.sym)
+            {
+            case SDLK_RETURN:
+                quit_scores = true;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
+void game::render_scores()
+{
+    //* Draw the background
+    SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
+
+    SDL_Color color_selection = {245, 236, 66};
+    SDL_Surface *back_button;
+
+    back_button = TTF_RenderText_Solid(font_button_selected, "BACK", color_selection);
+
+    SDL_Rect back_button_position;
+    //+ Back button
+    back_button_position.x = (SCREEN_WIDTH - back_button->w) / 2;
+    back_button_position.y = SCREEN_HEIGHT - 100;
+    SDL_BlitSurface(back_button, NULL, gScreenSurface, &back_button_position);
+
+    //* Update the surface
+    SDL_UpdateWindowSurface(gWindow);
+    //+ Adding delay between frames
+    SDL_Delay(DELAY / 10);
+}
+
 void game::poll_event_menu(SDL_Event e)
 {
     while (SDL_PollEvent(&e) != 0)
     {
         if (e.type == SDL_QUIT)
         {
+            quit_scores = true;
             quit_menu = true;
+            quit_game = true;
         }
         else if (e.type == SDL_KEYDOWN)
         {
@@ -306,6 +382,20 @@ void game::poll_event_menu(SDL_Event e)
                 }
                 break;
             case SDLK_RETURN:
+                if (menu_position == PLAY)
+                {
+                    quit_menu = true;
+                }
+                else if (menu_position == SCORES)
+                {
+                    // quit_menu = true;
+                    scores_loop();
+                }
+                else if (menu_position == QUIT)
+                {
+                    quit_menu = true;
+                    quit_game = true;
+                }
                 break;
             default:
                 break;
@@ -318,21 +408,6 @@ void game::render_menu()
 {
     //* Draw the background
     SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
-
-    if (TTF_Init() < 0)
-    {
-        std::cout << "Error initializing SDL_ttf: " << TTF_GetError() << std::endl;
-    }
-
-    TTF_Font *font_title, *font_button_idle, *font_button_selected;
-
-    font_title = TTF_OpenFont("./assets/b.ttf", 128);
-    font_button_idle = TTF_OpenFont("./assets/b.ttf", 50);
-    font_button_selected = TTF_OpenFont("./assets/b.ttf", 60);
-    if (!font_title && !font_button_idle && !font_button_selected)
-    {
-        std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
-    }
 
     int initial_height_of_button = 150;
 
@@ -387,7 +462,7 @@ void game::render_menu()
     //* Update the surface
     SDL_UpdateWindowSurface(gWindow);
     //+ Adding delay between frames
-    SDL_Delay(DELAY/10);
+    SDL_Delay(DELAY / 10);
 }
 
 void game::poll_event_game(SDL_Event e)
@@ -396,6 +471,8 @@ void game::poll_event_game(SDL_Event e)
     {
         if (e.type == SDL_QUIT)
         {
+            quit_scores = true;
+            quit_menu = true;
             quit_game = true;
         }
         else if (e.type == SDL_KEYDOWN)
@@ -677,6 +754,22 @@ void game::render_game()
             }
         }
     }
+
+    //* Draw score
+    SDL_Color color = {255, 0, 70};
+    SDL_Surface *score_button;
+
+    std::string score_s = std::to_string(snake_length-2);
+
+    const char* score_c = score_s.c_str();
+
+    score_button = TTF_RenderText_Solid(font_numbers, score_c, color);
+
+    SDL_Rect score_button_position;
+    //+ Back button
+    score_button_position.x = 10;
+    score_button_position.y = 10;
+    SDL_BlitSurface(score_button, NULL, gScreenSurface, &score_button_position);
 
     //* Update the surface
     SDL_UpdateWindowSurface(gWindow);
