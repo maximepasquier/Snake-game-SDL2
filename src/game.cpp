@@ -322,13 +322,6 @@ void game::save_score_loop()
     while (!quit_save_score)
     {
         poll_event_save_score(e);
-        /*
-        for (size_t i = 0; i < 20; i++)
-        {
-            std::cout << user_name[i] << " ";
-        }
-        std::cout << std::endl;
-        */
         render_save_score();
     }
     save_score_to_json();
@@ -352,6 +345,8 @@ void game::save_score_to_json()
     new_score["score"] = player_score;
     reader.parse(scores_json, obj); // reader can also read strings
     bool placed = false;
+    {
+    }
     for (const auto &jv : obj)
     {
         if (player_score > jv["score"].asInt() && !placed)
@@ -371,6 +366,11 @@ void game::save_score_to_json()
     //* Write scores
     std::ofstream json_file;
     json_file.open("data/scores.json");
+    //+ Empty file
+    if (obj.size() == 0)
+    {
+        all_scores.append(new_score);
+    }
     json_file << all_scores.toStyledString() << std::endl;
 }
 
@@ -416,6 +416,7 @@ void game::poll_event_save_score(SDL_Event e)
             switch (e.key.keysym.sym)
             {
             case SDLK_RETURN:
+                quit_save_score = true;
                 break;
             default:
                 break;
@@ -428,6 +429,13 @@ void game::poll_event_save_score(SDL_Event e)
             case SDLK_RETURN:
                 //+ Save the name
                 quit_save_score = true;
+                break;
+            case SDLK_BACKSPACE:
+                if (char_iterator > 0)
+                {
+                    char_iterator--;
+                    memset(user_name + char_iterator, 0, 1);
+                }
                 break;
             case SDLK_a:
                 user_name[char_iterator] = 'a';
@@ -546,6 +554,7 @@ void game::render_save_score()
     SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
 
     SDL_Color color = {255, 0, 170};
+    SDL_Color color_selection = {245, 236, 66};
     SDL_Surface *result;
 
     std::string score_s = std::to_string(snake_length - 2);
@@ -586,6 +595,15 @@ void game::render_save_score()
         }
         result_position.y = 250;
         SDL_BlitSurface(result, NULL, gScreenSurface, &result_position);
+
+        char sentence1[] = "SAVE AND QUIT";
+
+        result = TTF_RenderText_Solid(font_button_selected, sentence1, color_selection);
+
+        //+ Back button
+        result_position.x = (SCREEN_WIDTH - result->w) / 2;
+        result_position.y = 300;
+        SDL_BlitSurface(result, NULL, gScreenSurface, &result_position);
     }
     else
     {
@@ -597,6 +615,15 @@ void game::render_save_score()
         //+ Back button
         result_position.x = (SCREEN_WIDTH - result->w) / 2;
         result_position.y = 200;
+        SDL_BlitSurface(result, NULL, gScreenSurface, &result_position);
+
+        char sentence1[] = "QUIT";
+
+        result = TTF_RenderText_Solid(font_button_selected, sentence1, color_selection);
+
+        //+ Back button
+        result_position.x = (SCREEN_WIDTH - result->w) / 2;
+        result_position.y = 300;
         SDL_BlitSurface(result, NULL, gScreenSurface, &result_position);
     }
 
@@ -615,6 +642,7 @@ void game::poll_event_scores(SDL_Event e)
             quit_scores = true;
             quit_menu = true;
             quit_game = true;
+            quit_save_score = true;
         }
         else if (e.type == SDL_KEYDOWN)
         {
@@ -632,7 +660,7 @@ void game::poll_event_scores(SDL_Event e)
 
 void game::render_scores()
 {
-    
+
     //* Draw the background
     SDL_BlitSurface(gbackground, NULL, gScreenSurface, NULL);
 
@@ -659,7 +687,6 @@ void game::render_scores()
         sprintf(integer_string, "%d", jv["score"].asInt());
         strcat(c, integer_string);
 
-        
         one_score = TTF_RenderText_Solid(font_numbers, c, color);
         one_score_position.x = 100;
         one_score_position.y = initial_height;
@@ -691,6 +718,7 @@ void game::poll_event_menu(SDL_Event e)
             quit_scores = true;
             quit_menu = true;
             quit_game = true;
+            quit_save_score = true;
         }
         else if (e.type == SDL_KEYDOWN)
         {
@@ -723,6 +751,7 @@ void game::poll_event_menu(SDL_Event e)
                 {
                     quit_menu = true;
                     quit_game = true;
+                    quit_save_score = true;
                 }
                 break;
             default:

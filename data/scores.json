@@ -1,23 +1,15 @@
 [
    {
-      "name" : "aleem",
-      "score" : 11
+      "name" : "kilian",
+      "score" : 4
    },
    {
-      "name" : "meilleur",
-      "score" : 5
+      "name" : "aleem",
+      "score" : 3
    },
    {
       "name" : "kilian",
-      "score" : 5
-   },
-   {
-      "name" : "azeem",
-      "score" : 4
-   },
-   {
-      "name" : "dernierdeclasse",
-      "score" : 4
+      "score" : 1
    }
 ]
 
